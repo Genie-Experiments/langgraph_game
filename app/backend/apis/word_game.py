@@ -50,7 +50,7 @@ async def play_word_game(request: Request):
 @router.post("/word_game/resume")
 async def resume_word_game(request: Request):
     try:
-        print("🔄 Word game resume endpoint called")
+        print("Word game resume endpoint called")
         body = await request.json()
         print(f"DEBUG: Resume body: {body}")
 

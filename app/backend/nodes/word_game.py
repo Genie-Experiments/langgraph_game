@@ -47,13 +47,13 @@ def word_game_node(state):
             'word_game_count': updated_count
         }
 
-        print(f"🔤 DEBUG: Returning final result with {len(final_result)} keys")
+        print(f"DEBUG: Returning final result with {len(final_result)} keys")
         return final_result
 
     except Exception as e:
-        print(f"🔤 DEBUG: Exception in word_game_node: {e}")
+        print(f"DEBUG: Exception in word_game_node: {e}")
         import traceback
-        print(f"🔤 DEBUG: Traceback: {traceback.format_exc()}")
+        print(f"DEBUG: Traceback: {traceback.format_exc()}")
         return {
             **state,
             "error": str(e),
