@@ -11,7 +11,7 @@ router = APIRouter()
 @router.post("/word_game/play")
 async def play_word_game(request: Request):
     try:
-        print("🔤 Word game play endpoint called")
+        print("Word game play endpoint called")
         body = await request.json()
         print(f"DEBUG: Received: {body}")
 
@@ -30,7 +30,6 @@ async def play_word_game(request: Request):
         config = {"configurable": {"thread_id": unique_session_id}}
         print(f"DEBUG: Config with unique thread_id: {config}")
 
-        # Invoke the graph with fresh config
         print("DEBUG: Invoking compiled_graph with FRESH session...")
         result = compiled_graph.invoke(state, config)
         print(f"DEBUG: Graph result: {result}")
@@ -38,8 +37,8 @@ async def play_word_game(request: Request):
         return result
 
     except Exception as e:
-        print(f"❌ Word Game API Exception: {e}")
-        print(f"❌ Traceback: {traceback.format_exc()}")
+        print(f"Word Game API Exception: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
         return {
             "error": str(e),
             "message": "Failed to play word game",
@@ -69,20 +68,17 @@ async def resume_word_game(request: Request):
 
         print(f"DEBUG: Resuming with session_id: {session_id}")
 
-        # CRITICAL: Create a minimal state that just provides the user input
-        # Do NOT reconstruct the entire state - let LangGraph handle the continuation
+
         resume_state = {
-            "user_input": user_input,  # This is what the interrupted tool is waiting for
+            "user_input": user_input,
             "route_to": "word_game"
         }
 
         print(f"DEBUG: Minimal resume state: {resume_state}")
 
-        # CRITICAL: Use the EXACT same thread_id that was used in the original call
         config = {"configurable": {"thread_id": session_id}}
         print(f"DEBUG: Using config: {config}")
 
-        # CRITICAL: Call invoke() NOT stream() - this resumes the interrupted execution
         print("DEBUG: Calling compiled_graph.invoke() to resume...")
         result = compiled_graph.invoke(resume_state, config)
         print(f"DEBUG: Resume result: {result}")
@@ -90,8 +86,8 @@ async def resume_word_game(request: Request):
         return result
 
     except Exception as e:
-        print(f"❌ Word Game Resume Exception: {e}")
-        print(f"❌ Traceback: {traceback.format_exc()}")
+        print(f"Word Game Resume Exception: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
         return {
             "error": str(e),
             "message": "Failed to resume word game",

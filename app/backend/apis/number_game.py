@@ -60,8 +60,8 @@ async def play_number_game(request: Request):
         }
 
     except Exception as e:
-        print(f"❌ API Exception: {e}")
-        print(f"❌ Traceback: {traceback.format_exc()}")
+        print(f"API Exception: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
         return {
             "error": str(e),
             "message": "Failed to play number game",
@@ -215,8 +215,8 @@ async def resume_number_game(request: Request):
             }
 
     except Exception as e:
-        print(f"❌ Resume Exception: {e}")
-        print(f"❌ Traceback: {traceback.format_exc()}")
+        print(f"Resume Exception: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
         return {
             "error": str(e),
             "message": "Failed to resume number game",
