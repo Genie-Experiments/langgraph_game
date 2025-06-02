@@ -378,6 +378,7 @@ def process_game_response(response: Dict):
         import traceback
         print(f"DEBUG: Traceback: {traceback.format_exc()}")
 
+
 def send_user_input(user_input: str):
     """Send user input to the current game"""
     if not st.session_state.game_active or not st.session_state.current_game:
@@ -389,18 +390,53 @@ def send_user_input(user_input: str):
 
     add_message_to_history('user', user_input)
 
+    # IMPROVED: Check if we're responding to an interrupt by looking at the LAST agent message
+    is_interrupt_response = False
+
+    # Check if the last agent message contains interrupt indicators
+    if st.session_state.conversation_history:
+        # Look at the very last agent/interrupt message
+        last_agent_message = None
+        for msg in reversed(st.session_state.conversation_history):
+            if msg['type'] in ['agent', 'interrupt']:
+                last_agent_message = msg['content'].lower()
+                break
+
+        print(f"DEBUG: Last agent message: {last_agent_message}")
+
+        if last_agent_message:
+            # Check for word game interrupt patterns
+            if ("🎮 welcome to the word guessing game" in last_agent_message and
+                    "say 'ready'" in last_agent_message):
+                is_interrupt_response = True
+                print("DEBUG: Detected word game welcome interrupt - USING RESUME")
+            # Check for number game interrupt patterns
+            elif ("think of a number" in last_agent_message and
+                  ("ready" in last_agent_message or "prepared" in last_agent_message)):
+                is_interrupt_response = True
+                print("DEBUG: Detected number game ready interrupt - USING RESUME")
+            # Check for any question that needs resumption (contains specific question patterns)
+            elif user_input.lower() == "ready" and ("choose" in last_agent_message or "word" in last_agent_message):
+                is_interrupt_response = True
+                print("DEBUG: User said 'ready' in response to word selection - USING RESUME")
+
+    # ALSO: Check if st.session_state.interrupted is True (backup detection)
     if st.session_state.interrupted:
-        print("DEBUG: Using resume endpoint for interrupted game")
+        is_interrupt_response = True
+        print("DEBUG: Session state shows interrupted=True - USING RESUME")
+
+    if is_interrupt_response:
+        print("DEBUG: Using resume endpoint for interrupt response")
         return resume_game(user_input)
 
     print("DEBUG: Using regular play endpoint")
 
+    # Regular game flow
     current_messages = st.session_state.current_state.get('messages', [])
     updated_state = {
         **st.session_state.current_state,
         'user_input': user_input,
-        'messages': current_messages + [{'role': 'user', 'content': user_input}],
-        'session_id': st.session_state.session_id
+        'messages': current_messages + [{'role': 'user', 'content': user_input}]
     }
 
     print(f"DEBUG: Sending state: {updated_state}")
@@ -435,13 +471,13 @@ def resume_game(user_input: str):
 
     print(f"DEBUG: Using actual session_id: {actual_session_id}")
 
+    # FIXED: Simplified resume data - just pass the essentials
     resume_data = {
-        **st.session_state.current_state,  # Include all current state
         'user_input': user_input,
-        'session_id': actual_session_id,  # Use the actual session ID from API
+        'session_id': actual_session_id,
     }
 
-    print(f"DEBUG: Resume data session_id: {resume_data.get('session_id')}")
+    print(f"DEBUG: Resume data: {resume_data}")
 
     response = make_api_request(f"{st.session_state.current_game}/resume", resume_data)
 
@@ -450,6 +486,8 @@ def resume_game(user_input: str):
         with st.expander("🔍 Debug - Resume Response", expanded=False):
             st.json(response)
 
+        # Update the current state with the response
+        st.session_state.current_state.update(response)
         st.session_state.interrupted = False
         st.session_state.interrupt_message = None
 

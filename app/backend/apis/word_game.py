@@ -21,7 +21,7 @@ async def play_word_game(request: Request):
             "route_to": "word_game",
             "number_game_count": 0,
             "word_game_count": 0,
-            "messages": [{"role": "user", "content": "Let's play the word game"}],
+            "messages": [{"role": "user", "content": "Use the play_word_game tool to start the word game"}],
             "session_id": unique_session_id
         }
 
@@ -51,45 +51,35 @@ async def resume_word_game(request: Request):
     try:
         print("Word game resume endpoint called")
         body = await request.json()
-        print(f"DEBUG: Resume body: {body}")
-
-        # Get user response
         user_input = body.get("user_input")
-        if not user_input:
-            return {"error": "Missing user input to resume word game"}
-
-        print(f"DEBUG: User input: {user_input}")
-
-        # Extract the session ID - CRITICAL for proper resumption
         session_id = body.get("session_id")
-        if not session_id:
-            print("DEBUG: No session_id found in resume request")
-            return {"error": "Missing session_id for resume"}
 
-        print(f"DEBUG: Resuming with session_id: {session_id}")
-
-
-        resume_state = {
-            "user_input": user_input,
-            "route_to": "word_game"
-        }
-
-        print(f"DEBUG: Minimal resume state: {resume_state}")
+        if not user_input or not session_id:
+            return {"error": "Missing user_input or session_id"}
 
         config = {"configurable": {"thread_id": session_id}}
-        print(f"DEBUG: Using config: {config}")
 
-        print("DEBUG: Calling compiled_graph.invoke() to resume...")
-        result = compiled_graph.invoke(resume_state, config)
-        print(f"DEBUG: Resume result: {result}")
+        # Get current state to see what we're resuming
+        current_state = compiled_graph.get_state(config)
+        print(f"DEBUG: Current state next: {current_state.next}")
+
+        # Resume by continuing with None and letting the interrupt receive the input
+        # The input parameter is how you provide responses to interrupts
+        result = None
+        for chunk in compiled_graph.stream(None, config):
+            print(f"DEBUG: Chunk: {chunk}")
+            result = chunk
+
+        # If that didn't work, the interrupt might need the input differently
+        if not result or '__interrupt__' in str(result):
+            # Try providing input as command
+            result = compiled_graph.invoke(
+                {"messages": [{"role": "user", "content": user_input}]},
+                config
+            )
 
         return result
 
     except Exception as e:
-        print(f"Word Game Resume Exception: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
-        return {
-            "error": str(e),
-            "message": "Failed to resume word game",
-            "messages": [{"role": "assistant", "content": f"Error: {str(e)}"}]
-        }
+        print(f"Resume Exception: {e}")
+        return {"error": str(e), "message": "Failed to resume word game"}

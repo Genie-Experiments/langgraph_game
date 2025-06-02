@@ -1,3 +1,11 @@
+from langgraph_supervisor import create_supervisor
+
+from app.backend.agents.number_game_agent import number_game_agent
+from app.backend.agents.word_game_agent import word_game_agent
+from app.backend.agents.end_game_agent import end_game_agent
+from app.backend.utils.model import model
+
+
 SUPERVISOR_PROMPT = """You are a game orchestrator supervisor. Based on the user's request and the route_to field, you need to route them to the appropriate agent.
 
 IMPORTANT: If the state has route_to="word_game", you MUST route to word_game_agent.
@@ -16,12 +24,7 @@ If they want to quit, end, or stop → route to end_game_agent
 
 You must respond with a Command to route to the appropriate agent."""
 
-from langgraph_supervisor import create_supervisor
 
-from app.backend.agents.number_game_agent import number_game_agent
-from app.backend.agents.word_game_agent import word_game_agent
-from app.backend.agents.end_game_agent import end_game_agent
-from app.backend.utils.model import model
 
 game_orchestrator = create_supervisor(
     [number_game_agent, word_game_agent, end_game_agent],
